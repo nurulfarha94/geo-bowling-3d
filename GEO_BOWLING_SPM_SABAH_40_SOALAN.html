@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>GEO BOWLING • SPM Geografi 2026</title>
+<style>
+:root{--bg:#080d25;--panel:#182344;--gold:#ffd166;--cyan:#67e8f9;--green:#34d399;--red:#fb7185}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#273b70,#080d25 70%);color:#fff;font-family:system-ui,-apple-system,sans-serif;min-height:100vh}
+header{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:12px}
+.pill,.card{background:#17213feF;border:1px solid #ffffff30;border-radius:16px;padding:12px}
+.pill{font-weight:800}.gold{color:var(--gold)}button{border:0;border-radius:12px;padding:12px;font-weight:800;cursor:pointer}
+button:disabled{opacity:.55}.toggle{background:#27385f;color:#fff}
+main{max-width:900px;margin:auto;padding:10px}.card{padding:20px;margin:10px 0;box-shadow:0 10px 30px #0004}
+h1{text-align:center;color:var(--gold);margin:8px 0}h2{font-size:1.15rem;line-height:1.45}
+#answers{display:grid;grid-template-columns:1fr;gap:9px}.choice{text-align:left;background:#25345a;color:white;border:1px solid #61749d;font-size:1rem}.choice.correct{background:#087f5b}.choice.wrong{background:#a61b36}
+#feedback{min-height:28px;font-weight:800;margin:12px 0}.primary{background:linear-gradient(90deg,#ffd166,#f59e0b);color:#1c1c1c;width:100%;font-size:1rem}
+#lane{height:245px;background:linear-gradient(#182a50,#273e64 45%,#b88146 46%,#6c422c);border:5px solid #e9bd77;border-radius:18px;position:relative;overflow:hidden}
+#pins{position:absolute;top:30px;left:0;right:0;text-align:center;font-size:31px;line-height:1.35;letter-spacing:4px;transition:transform .7s}
+#ball{position:absolute;bottom:18px;left:calc(50% - 19px);font-size:38px;transition:all .75s ease}
+#bowling{display:none}.muted{color:#cbd5e1;font-size:.9rem}.scores{display:grid;grid-template-columns:1fr 1fr;gap:10px}.scorebox{text-align:center;padding:10px;background:#0b1533;border-radius:12px}.scorebox b{display:block;font-size:1.5rem;color:var(--cyan)}
+.hidden{display:none!important}.row{display:flex;gap:8px;flex-wrap:wrap}.row button{flex:1}
+@media(min-width:650px){#answers{grid-template-columns:1fr 1fr}}
+</style></head><body>
+<header>
+ <div class="pill">🎳 GEO BOWLING SPM 2026</div>
+ <div class="row"><button id="musicBtn" class="toggle">🎵 Muzik: OFF</button><button id="sfxBtn" class="toggle">🔊 Kesan bunyi: ON</button></div>
+</header>
+<main>
+ <section id="intro" class="card"><h1>🌍 GEO BOWLING: MISI JUARA</h1><p>Jawab 40 soalan Percubaan SPM Geografi Tingkatan 5 (Sabah). Jawapan betul membuka peluang balingan bowling.</p><p class="muted">Markah Geografi dan markah bowling dikira secara berasingan. Muzik lagu asal “Semangat Juara” tidak disertakan; butang muzik memainkan muzik latar sintetik ringkas. Gunakan fail audio yang anda mempunyai kebenaran untuk menggunakannya jika mahu memasukkan lagu sebenar.</p><button class="primary" id="start">MULA PERMAINAN ▶</button></section>
+ <section id="game" class="hidden">
+  <div class="card scores"><div class="scorebox">Geografi <b><span id="geoScore">0</span>/40</b><small>Jawapan betul</small></div><div class="scorebox">Bowling <b><span id="bowlScore">0</span></b><small>Pin dijatuhkan</small></div></div>
+  <div class="card"><div class="muted">SOALAN <span id="qNo">1</span>/40</div><h2 id="question"></h2><div id="answers"></div><div id="feedback" aria-live="polite"></div><button id="continue" class="primary hidden">TERUSKAN ➜</button></div>
+  <div id="bowling" class="card"><h2>🎳 Giliran balingan!</h2><p class="muted">Seret bola ke kiri/kanan untuk sasaran, kemudian tekan butang baling.</p><div id="lane"><div id="pins">🎳 🎳 🎳 🎳 🎳<br>🎳 🎳 🎳 🎳 🎳</div><div id="ball">🔴</div></div><div class="row" style="margin-top:12px"><button id="left" class="toggle">⬅ Sasaran kiri</button><button id="throw" class="primary">BALING! 🎳</button><button id="right" class="toggle">Sasaran kanan ➡</button></div><p id="bowlFeedback"></p><button id="next" class="primary hidden">SOALAN SETERUSNYA ➜</button></div>
+ </section>
+ <section id="finish" class="card hidden"><h1>🏆 MISI SELESAI!</h1><div class="scores"><div class="scorebox">Markah Geografi<b id="finalGeo"></b></div><div class="scorebox">Pin dijatuhkan<b id="finalBowl"></b></div></div><p id="remark"></p><button class="primary" onclick="location.reload()">MAIN SEMULA 🔄</button></section>
+</main>
+<script>
+const Q=[
+["Jurang Mariana yang sangat dalam terbentuk akibat pergerakan plat yang manakah?",["Pencapahan plat lautan dengan plat lautan","Pencapahan plat lautan dengan plat daratan","Pertembungan plat lautan dengan plat lautan","Pertembungan plat lautan dengan plat daratan"],2],
+["Lapisan bumi yang terdiri daripada batuan cecair dan bersuhu sekitar 3000°C ialah lapisan yang manakah?",["Kerak bumi","Mantel atas","Teras luar","Teras dalam"],2],
+["Batuan igneus dan enapan boleh bertukar kepada batuan metamorfosis akibat perubahan yang manakah?",["Suhu dan tekstur","Suhu dan tekanan","Tekstur dan warna","Warna dan tekanan"],1],
+["Kombinasi jenis batuan dan kegunaannya yang manakah benar?",["Granit — pembinaan jalan raya","Marmar — pengangkutan","Kuartzit — perhiasan","Gipsum — pembinaan empangan"],0],
+["Apakah proses luluhawa fizikal yang ditunjukkan oleh rajah serpihan batuan daripada batuan asal dalam soalan?",["Tindakan ibun","Penghabluran garam","Pemecahan bongkah","Penyepaian berbutir"],3],
+["Apakah kepentingan luluhawa kimia kepada ekonomi Malaysia?",["Menghasilkan batu granit untuk pembinaan","Membentuk gua batu kapur sebagai lokasi pelancongan","Menghasilkan garam melalui penghabluran","Mempercepat aktiviti kuari melalui pemecahan bongkah"],1],
+["Gerakan jisim yang bergerak sangat perlahan dan menyebabkan tiang elektrik condong ialah apa?",["Aliran lumpur","Kesotan tanih","Gelangsar tanah","Gelongsoran tanah"],1],
+["Apakah kesan kejadian gerakan jisim dalam Foto 1 terhadap alam sekitar?",["Tanih tandus","Kemusnahan flora","Kesesakan lalu lintas","Peningkatan suhu"],1],
+["Apakah proses hakisan sungai yang dikaitkan dengan rajah 2 dalam kertas soalan?",["Hakisan melebar","Hakisan menegak","Hakisan melintang","Hakisan mengundur"],3],
+["Cadangan manakah membantu menjaga kelestarian sungai? I Merawat sumber air; II Pembinaan benteng; III Tebus guna tanah; IV Memasang perangkap sampah.",["I dan II","I dan IV","II dan III","III dan IV"],0],
+["Ombak yang mempunyai damparan kuat, basuhan balik lemah dan memendapkan bahan di pantai ialah?",["Ombak pecah","Ombak junam","Ombak pembina","Ombak pembinasa"],2],
+["Bagaimanakah kerajaan memelihara sumber marin di Malaysia?",["Mewartakan taman laut","Membina gabion dan groin","Membina pelabuhan perikanan","Menanam semula pokok bakau"],0],
+["Mengapakah julat suhu harian Bayan Lepas lebih rendah berbanding Temerloh?",["Pengaruh kelautan","Pengaruh angin monsun","Kedudukan garisan lintang","Ketinggian bentuk muka bumi"],0],
+["Langkah persediaan kerajaan India menghadapi kemarau: I Mewujudkan kawasan hijau; II Membeli air dari luar negara; III Mengitar semula air terpakai; IV Membina telaga air bawah tanah.",["I dan II","I dan IV","II dan III","III dan IV"],1],
+["Ciri iklim Khatulistiwa yang benar: I Min suhu tahunan kira-kira 27°C; II Satu musim kering; III Julat suhu harian kecil 1–2°C; IV Hujan tahunan melebihi 2600 mm.",["I dan II","I dan IV","II dan III","III dan IV"],1],
+["Kombinasi kegiatan manusia dan kesan alam sekitar yang benar ialah?",["Pembakaran bahan api fosil — kesan rumah hijau","Penggunaan aerosol — pulau haba","Pembuangan sisa toksik — jerebu","Penebangan hutan — hujan asid"],0],
+["Apakah kepentingan cacing dalam ekosistem?",["Pengguna yang memakan pengguna primer","Pengurai yang menghasilkan nutrien","Membantu tumbuhan melalui fotosintesis","Pengeluar yang menghasilkan makanan sendiri"],1],
+["Tumbuhan xerofit, taburan jarang dan berakar panjang biasanya terdapat di kawasan?",["Hutan Boreal","Gurun Panas","Hutan Konifer","Padang Rumput Savana"],1],
+["Apakah maksud pemuliharaan tumbuh-tumbuhan semula jadi di Malaysia?",["Melindungi habitat fauna daripada diceroboh","Penebangan terpilih oleh Jabatan Perhutanan","Mengawasi aktiviti pembalakan","Memastikan sumber hutan yang diganggu kembali seperti asal"],3],
+["Antara berikut, langkah pemeliharaan tumbuh-tumbuhan semula jadi di Malaysia ialah: I Mewartakan hutan simpan; II Menanam pokok cepat matang; III Penghutanan semula; IV Pendidikan alam sekitar.",["I dan II","I dan IV","II dan III","III dan IV"],0],
+["Negara Y mempunyai keluasan 1200 km² dan penduduk 800,000 orang. Berapakah kepadatan penduduknya?",["467 orang/km²","577 orang/km²","667 orang/km²","878 orang/km²"],2],
+["Kawasan manakah mempunyai penduduk jarang? I Banjaran Rocky; II Delta Sungai Nil; III Lembangan Hwang Ho; IV Lembangan Amazon.",["I dan II","I dan IV","II dan III","III dan IV"],1],
+["Apakah kesan bagi negara yang mempunyai penduduk ramai, sumber terhad dan tahap teknologi rendah?",["Taraf kesihatan tinggi","Kadar upah meningkat","Kadar celik huruf tinggi","Peluang pekerjaan terhad"],1],
+["Negara P mempunyai jumlah penduduk 400,000 orang dan jumlah kematian 240,000 orang pada tahun 2024. Berapakah kadar kematian kasar?",["6 bagi setiap 1000 orang","60 bagi setiap 1000 orang","160 bagi setiap 1000 orang","600 bagi setiap 1000 orang"],3],
+["Alissa berpindah dari Kota Bharu ke Shah Alam untuk melanjutkan pelajaran. Apakah jenis migrasi?",["Bandar ke bandar","Bandar ke luar bandar","Luar bandar ke bandar","Luar bandar ke luar bandar"],0],
+["Bagaimanakah pemodenan sektor pertanian dapat mengurangkan migrasi luar bandar ke bandar? I Jentera moden; II Tenaga kerja asing; III Pertanian pindah; IV Baja kimia.",["I dan II","I dan IV","I dan III","III dan IV"],1],
+["Mengapakah petempatan L dan M dalam Peta 1 berkembang pesat?",["Ekopelancongan","Perindustrian petrokimia","Kawasan pertanian ladang","Perdagangan antarabangsa"],1],
+["Apakah kepentingan petempatan luar bandar kepada petempatan bandar dalam sektor pelancongan?",["Menyediakan kemudahan infrastruktur","Membekalkan sumber makanan","Membekalkan perkhidmatan sosial","Menyediakan keindahan alam semula jadi"],3],
+["Bagaimanakah mengurangkan masalah perumahan dan kesesakan lalu lintas akibat urbanisasi?",["Membina rumah pangsa","Mewujudkan bandar satelit","Membina jalan raya bertingkat","Menguatkuasakan undang-undang"],1],
+["Kesan positif urbanisasi di negara maju: I Perkembangan infrastruktur; II Kesesakan lalu lintas; III Banjir kilat; IV Taraf hidup meningkat.",["I dan II","I dan IV","I dan III","III dan IV"],1],
+["Yang manakah sumber tenaga boleh baharu?",["Air","Batu kapur","Gas asli","Arang batu"],0],
+["Mengapakah penggunaan tenaga nuklear lebih tertumpu di negara maju?",["Kos yang murah","Kepakaran tenaga kerja","Mesra alam sekitar","Sumber tenaga lain terhad"],1],
+["Apakah kesan negatif perlombongan arang batu terhadap alam sekitar?",["Pencemaran bahan toksik","Pencemaran laut","Fenomena jerebu","Fenomena pulau haba"],0],
+["Langkah mengatasi masalah pengurusan sumber yang betul ialah: I Pemusnahan habitat akuatik—tukun tiruan; II Kemerosotan kualiti air sungai—rawatan kumbahan; III Kesuburan tanih berkurang—tanaman giat setempat; IV Kepupusan flora—program pembiakan hidupan liar.",["I dan II","I dan IV","I dan III","III dan IV"],1],
+["Kegiatan yang dikategorikan sebagai sektor tertier ialah?",["Perikanan air tawar","Perindustrian automotif","Ekopelancongan","Perlombongan mineral"],2],
+["Mengapakah kegiatan ekonomi automotif berkembang pesat di Jepun?",["Subsidi kerajaan","Bekalan tenaga buruh ramai","Kerjasama dengan negara maju","Teknologi kejuruteraan robotik"],3],
+["Bagaimanakah faktor fizikal menggalakkan kegiatan pertanian di Malaysia?",["Memberi pinjaman modal","Jaringan pengangkutan yang baik","Pembinaan sistem pengairan cekap","Kawasan tanah beralun yang bersaliran baik"],3],
+["Mengapakah pertanian pindah boleh menyebabkan tanih hilang kesuburan?",["Hakisan tanih tinggi","Aktiviti tebus guna tanah","Tanih kekurangan nutrien","Kawasan menjadi kontang"],2],
+["Kombinasi aktiviti manusia dan kesan alam sekitar yang benar ialah: I Pertanian pindah—cerun bukit gondol; II Baja kimia—keasidan tanih meningkat; III Pembinaan pelabuhan—aras laut meningkat; IV Perlombongan petroleum—kemusnahan taman laut.",["I dan II","I dan IV","II dan III","I dan IV"],0],
+["Apakah usaha awal untuk mengurangkan kesan kegiatan ekonomi terhadap alam sekitar?",["Program kitar semula","Aplikasi teknologi hijau","Penilaian Impak Alam Sekitar (EIA)","Penyelidikan dan pembangunan (R&D)"],2]
+];
+const KEY=[2,0,1,0,3,1,1,1,3,0,2,0,0,1,1,0,1,1,3,0,2,1,1,3,0,1,1,3,1,1,0,1,0,1,2,3,3,2,0,2];
+let idx=0,geo=0,bowl=0,aim=0,answered=false,allowed=false,audioCtx=null,musicTimer=null,musicOn=false,sfxOn=true;
+const $=id=>document.getElementById(id);
+function tone(freq=440,dur=.12,type='sine',vol=.08){if(!sfxOn)return;try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.value=freq;g.gain.value=vol;o.connect(g);g.connect(audioCtx.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.stop(audioCtx.currentTime+dur)}catch(e){}}
+function showQ(){if(idx>=Q.length){finish();return}answered=false;allowed=false;$('bowling').style.display='none';$('qNo').textContent=idx+1;$('question').textContent=Q[idx][0];$('answers').innerHTML='';$('feedback').textContent='';$('continue').classList.add('hidden');Q[idx][1].forEach((t,i)=>{let b=document.createElement('button');b.className='choice';b.textContent=String.fromCharCode(65+i)+'. '+t;b.onclick=()=>answer(i,b);$('answers').appendChild(b)})}
+function answer(i,b){if(answered)return;answered=true;let good=i===KEY[idx];[...$('answers').children].forEach((x,j)=>{if(j===KEY[idx])x.classList.add('correct');if(j===i&&!good)x.classList.add('wrong');x.disabled=true});if(good){geo++;$('feedback').style.color='#6ee7b7';$('feedback').textContent='✅ Betul! Anda mendapat peluang balingan bowling.';tone(760,.18,'triangle');allowed=true;$('bowling').style.display='block';$('next').classList.add('hidden');$('bowlFeedback').textContent='Sasaran: tengah';$('pins').style.transform='';$('ball').style.left='calc(50% - 19px)'}else{$('feedback').style.color='#fda4af';$('feedback').textContent='❌ Jawapan betul: '+String.fromCharCode(65+KEY[idx])+'. '+Q[idx][1][KEY[idx]];$('continue').classList.remove('hidden');tone(180,.2,'sawtooth')}$('geoScore').textContent=geo}
+$('continue').onclick=()=>{idx++;showQ()};
+$('left').onclick=()=>{aim=Math.max(-1,aim-1);$('ball').style.left=`calc(50% - 19px + ${aim*48}px)`;$('bowlFeedback').textContent=aim<0?'Sasaran kiri':'Sasaran tengah';tone(300,.06)};
+$('right').onclick=()=>{aim=Math.min(1,aim+1);$('ball').style.left=`calc(50% - 19px + ${aim*48}px)`;$('bowlFeedback').textContent=aim>0?'Sasaran kanan':'Sasaran tengah';tone(330,.06)};
+$('throw').onclick=()=>{if(!allowed)return;allowed=false;let n=Math.max(1,Math.min(10,Math.round(5+Math.random()*4-Math.abs(aim)*2)));bowl+=n;$('bowlScore').textContent=bowl;$('ball').style.bottom='170px';$('pins').style.transform=`rotate(${aim*12}deg) translateY(22px)`;tone(130,.35,'triangle');setTimeout(()=>tone(n>=7?880:420,.25,'sine'),350);$('bowlFeedback').textContent=`🎳 ${n} pin jatuh! Markah bowling berasingan daripada markah Geografi.`;$('next').classList.remove('hidden')};
+$('next').onclick=()=>{idx++;aim=0;showQ()};
+function finish(){$('game').classList.add('hidden');$('finish').classList.remove('hidden');$('finalGeo').textContent=geo+'/40';$('finalBowl').textContent=bowl+' pin';$('remark').textContent=geo>=32?'Cemerlang! Anda sangat bersedia untuk SPM.':geo>=24?'Bagus! Semak semula soalan yang tersilap.':'Teruskan ulang kaji dan cuba sekali lagi!'}
+$('start').onclick=()=>{$('intro').classList.add('hidden');$('game').classList.remove('hidden');showQ()};
+$('sfxBtn').onclick=()=>{sfxOn=!sfxOn;$('sfxBtn').textContent='🔊 Kesan bunyi: '+(sfxOn?'ON':'OFF');if(sfxOn)tone(600,.1)};
+$('musicBtn').onclick=()=>{musicOn=!musicOn;$('musicBtn').textContent='🎵 Muzik: '+(musicOn?'ON':'OFF');if(musicOn){try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();let notes=[392,440,523,440,392,330,349,392];let k=0;musicTimer=setInterval(()=>{if(!musicOn)return;let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='triangle';o.frequency.value=notes[k++%notes.length];g.gain.value=.025;o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.18)},260)}catch(e){}}else{clearInterval(musicTimer)}};
+</script></body></html>
