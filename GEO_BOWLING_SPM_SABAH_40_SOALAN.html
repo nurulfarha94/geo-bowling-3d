@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>GEO BOWLING 3D — Cabaran Geografi</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Bungee&display=swap" rel="stylesheet">
+<style>
+:root{--glass:rgba(19,24,62,.84);--gold:#fbbf24;--cyan:#67e8f9;--green:#34d399;--red:#fb7185}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#090d25;color:white;font-family:'Baloo 2',sans-serif;touch-action:pan-y}
+#canvas-container{position:fixed;inset:0;z-index:0}canvas{display:block}
+.font-bungee{font-family:'Bungee',sans-serif}.glass{background:var(--glass);backdrop-filter:blur(12px);border:1px solid #ffffff30;border-radius:20px;box-shadow:0 12px 35px #0004}
+header{position:absolute;z-index:3;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:12px;gap:8px;pointer-events:none}header>*{pointer-events:auto}
+.hud{padding:8px 13px;display:flex;align-items:center;gap:10px}.badge{background:linear-gradient(135deg,#facc15,#f97316);color:#111827;border-radius:12px;padding:7px 12px;font-family:Bungee;font-size:18px}
+.small{font-size:11px;color:#cbd5e1;text-transform:uppercase;font-weight:800;letter-spacing:1px}.value{font-family:Bungee;font-size:19px;color:var(--gold)}
+button{font-family:inherit;cursor:pointer;border:0;transition:transform .12s,filter .12s}button:active{transform:scale(.96)}.primary{width:100%;padding:14px 16px;border-radius:15px;background:linear-gradient(90deg,#fbbf24,#f97316);color:#111827;font:18px Bungee;box-shadow:0 8px 20px #f59e0b35}
+.overlay{position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;padding:16px;background:#070b20b8;backdrop-filter:blur(7px)}
+.panel{width:min(540px,100%);padding:26px;border-radius:28px;text-align:center;border:2px solid #fbbf2480;position:relative;overflow:hidden}
+.rainbow{height:7px;position:absolute;top:0;left:0;right:0;background:linear-gradient(90deg,#fb7185,#fbbf24,#34d399,#38bdf8,#a78bfa,#f472b6)}
+h1{font-family:Bungee,sans-serif;color:#fcd34d;line-height:1.2;margin:10px 0 14px;text-shadow:3px 3px #0005}p{line-height:1.4}.hidden{display:none!important}
+#quiz-question{font-size:clamp(22px,4.6vw,36px);font-weight:800;color:#fcd34d;line-height:1.15;margin:20px 0}
+#quiz-choices{display:grid;grid-template-columns:1fr;gap:10px}
+.choice{padding:12px 14px;background:#20294d;color:#fff;border:1px solid #64748b;border-radius:14px;font-size:17px;font-weight:800;text-align:left}
+.choice:hover{background:#fbbf24;color:#111827}.choice.correct{background:#10b981;color:#052e24}.choice.wrong{background:#f43f5e;color:white}
+#feedback{min-height:28px;margin-top:12px;font-weight:800}
+#aim-panel{position:absolute;z-index:3;bottom:14px;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+#aim-message{padding:9px 16px;text-align:center;max-width:94%;font-weight:800;color:#a5f3fc}
+#throw-zone{pointer-events:auto;width:min(330px,88vw);height:94px;border:3px dashed #67e8f9aa;border-radius:24px;background:#08334499;display:flex;align-items:center;justify-content:center;gap:12px;font-weight:800;color:#cffafe;touch-action:none;user-select:none}
+#throw-zone.pulling{box-shadow:0 0 30px #38bdf866;transform:scale(1.02)}
+#mascot{position:absolute;z-index:3;bottom:120px;left:12px;pointer-events:none;font-size:30px}
+#result-banner{position:absolute;z-index:4;top:92px;left:50%;transform:translateX(-50%);width:min(420px,92vw);text-align:center;padding:16px;border:3px solid #fbbf24}
+#result-title{font-family:Bungee;font-size:clamp(27px,6vw,42px);color:#fcd34d}
+#summary-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}
+.stat{padding:12px;border:1px solid #64748b;border-radius:15px;background:#ffffff0b}
+.stat strong{display:block;font:22px Bungee;color:#67e8f9}
+#level-intro{position:absolute;z-index:4;top:24%;left:50%;transform:translateX(-50%);width:min(430px,92vw);padding:20px;text-align:center}
+@media(min-width:650px){#quiz-choices{grid-template-columns:1fr 1fr 1fr}.choice{text-align:center}#quiz-choices .choice{font-size:15px}.panel{padding:30px}}
+@media(max-width:480px){header{padding:7px;gap:5px}.hud{padding:7px 9px;gap:6px}.badge{padding:6px 9px;font-size:15px}.value{font-size:15px}.small{font-size:9px}.panel{padding:23px 17px}.panel h1{font-size:25px}#aim-panel{bottom:10px}#throw-zone{height:82px}#mascot{bottom:104px}}
+</style>
+</head>
+<body>
+<div id="canvas-container"></div>
+<header id="hud" class="hidden">
+  <div class="glass hud"><div id="level-badge" class="badge">1</div><div><div class="small">Level <span id="level-num">1</span>/5</div><strong id="theme-name">Pusat Bowling Geografi</strong></div></div>
+  <div style="display:flex;gap:7px;align-items:center">
+    <div class="glass hud" style="display:block;text-align:center"><div class="small">Pusingan</div><div class="value"><span id="round-num">1</span>/10</div></div>
+    <div class="glass hud" style="display:block;text-align:center"><div class="small">Pin jatuh</div><div class="value"><span id="score-num">0</span><span style="font:11px sans-serif;color:#cbd5e1">/80</span></div></div><div class="glass hud" style="display:block;text-align:center"><div class="small">Geo</div><div class="value" style="color:#6ee7b7"><span id="geo-score">0</span><span style="font:11px sans-serif;color:#cbd5e1">/40</span></div></div>
+    <button id="sound-btn" class="glass" style="padding:10px;font-size:20px" aria-label="Bunyi">🔊</button>
+  </div>
+</header>
+<div id="mascot" class="hidden">🐨 <span id="mascot-text" class="glass" style="font-size:14px;padding:7px 10px;vertical-align:middle">Jom belajar!</span></div>
+<div id="start-modal" class="overlay">
+ <div class="panel glass"><div class="rainbow"></div><div style="font-size:64px;margin-top:8px">🎳🌍</div>
+  <h1>GEO BOWLING 3D</h1>
+  <p>Jawab soalan Geografi, kemudian sasar dan slide bola untuk menjatuhkan pin! Kumpul markah dalam 5 level yang mencabar.</p>
+  <p style="font-size:13px;color:#cbd5e1">8 soalan setiap level • 40 soalan Geografi SPM Sabah 2026 • 1 pin = 1 markah</p>
+  <button id="start-btn" class="primary">MULA PERMAINAN ▶</button>
+ </div>
+</div>
+<div id="quiz-modal" class="overlay hidden">
+ <div class="panel glass"><div class="rainbow"></div><div style="display:inline-block;background:#fbbf2430;color:#fde68a;padding:5px 12px;border-radius:30px;margin-top:8px;font-weight:800">🧠 CABARAN GEOGRAFI • PUSINGAN <span id="quiz-round">1</span></div>
+ <p style="margin:12px 0 0">Pilih jawapan yang paling tepat untuk membuka balingan!</p><div id="quiz-question">Apakah maksud peta topografi?</div>
+ <div id="quiz-choices"></div><div id="feedback"></div></div>
+</div>
+<div id="aim-panel" class="hidden">
+ <div id="aim-message" class="glass">🎯 Seret kiri/kanan untuk sasar, kemudian slide ke atas untuk baling!</div>
+ <div id="throw-zone"><span style="font-size:30px">👆</span><span>SLIDE KE ATAS UNTUK BALING</span></div>
+</div>
+<div id="result-banner" class="glass hidden">
+ <div id="result-title">STRIKE!</div><div id="result-sub">Semua 10 pin jatuh!</div>
+ <div style="font-size:35px;margin:7px">🎳</div><strong id="result-points" style="font:22px Bungee;color:#fcd34d">+10 MARKAH</strong>
+</div>
+<div id="level-intro" class="glass hidden"><div id="intro-emoji" style="font-size:56px">🎳</div><div class="small">LEVEL <span id="intro-num">1</span></div><h1 id="intro-name" style="font-size:25px">PUSAT BOWLING</h1><p id="intro-tag">Bersedia untuk cabaran!</p></div>
+<div id="summary-modal" class="overlay hidden">
+ <div class="panel glass"><div class="rainbow"></div><div id="summary-icon" style="font-size:60px;margin-top:7px">🏆</div><h1 id="summary-title">LEVEL SELESAI!</h1><p id="summary-desc">Syabas!</p>
+ <div id="summary-stats"><div class="stat"><span class="small">Markah level</span><strong id="summary-score">0/80</strong></div><div class="stat"><span class="small">Ketepatan</span><strong id="summary-accuracy">0%</strong></div></div>
+ <div id="summary-stars" style="font-size:30px;margin:12px">⭐⭐⭐</div><button id="next-btn" class="primary">LEVEL SETERUSNYA ➡</button>
+ </div>
+</div>
+<script>
+/* 40 soalan objektif Geografi SPM Tingkatan 5, Percubaan Sabah 2026. Jawapan berdasarkan skema pada PDF yang diberikan. */
+const LEVELS=[
+ {name:"Pusat Bowling Geografi",emoji:"🎳",tag:"Kemahiran dan proses fizikal",decor:"alley",floor:0x8b5cf6,ball:0xef4444,qs:[["Jurang Mariana yang sangat dalam terbentuk akibat proses pergerakan plat yang manakah?", ["Pencapahan plat lautan dengan plat lautan", "Pencapahan plat lautan dengan plat daratan", "Pertembungan plat lautan dengan plat lautan", "Pertembungan plat lautan dengan plat daratan"], 2], ["Lapisan bumi yang terdiri daripada batuan cecair dan bersuhu kira-kira 3000°C ialah", ["Teras luar", "Teras dalam", "Ketakselanjaran Gutenberg", "Ketakselanjaran Mohorovicic"], 0], ["Batuan igneus dan batuan enapan bertukar menjadi batuan metamorfosis disebabkan perubahan", ["Suhu", "Tekstur", "Warna", "Tekanan"], 1], ["Kombinasi kegunaan jenis batuan yang manakah benar?", ["Granit – pembinaan jalan raya", "Marmar – pengangkutan", "Kuartzit – perhiasan", "Gipsum – pembinaan empangan"], 0], ["Proses luluhawa fizikal yang ditunjukkan oleh batuan asal menjadi serpihan batuan ialah", ["Tindakan ibun", "Penghabluran garam", "Pemecahan bongkah", "Penyepaian berbutir"], 3], ["Apakah kepentingan luluhawa kimia kepada ekonomi Malaysia?", ["Menghasilkan batu granit untuk pembinaan", "Membentuk gua batu kapur sebagai lokasi pelancongan", "Menghasilkan garam melalui penghabluran", "Mempercepat aktiviti kuari melalui pemecahan bongkah"], 1], ["Gerakan jisim yang bergerak sangat perlahan sehingga tiang elektrik condong dikenali sebagai", ["Aliran lumpur", "Kesotan tanih", "Gelangsar tanah", "Gelongsoran tanah"], 1], ["Apakah kesan kejadian gerakan jisim terhadap alam sekitar?", ["Tanih tandus", "Kemusnahan flora", "Kesesakan lalu lintas", "Peningkatan suhu"], 1]]},
+ {name:"Pantai dan Alam Sekitar",emoji:"🏝️",tag:"Sungai, ombak dan iklim",decor:"beach",floor:0xc0843d,ball:0x6b6d4,qs:[["Apakah proses hakisan sungai yang berkaitan dengan rajah dalam kertas soalan?", ["Hakisan melebar", "Hakisan menegak", "Hakisan melintang", "Hakisan mengundur"], 3], ["Cadangan menjaga kelestarian sungai ialah merawat sumber air dan", ["Membina benteng", "Menebus guna tanah", "Memasang perangkap sampah", "Membina kawasan perumahan"], 0], ["Ombak yang mempunyai damparan kuat, basuhan balik lemah dan memendapkan bahan di pantai ialah", ["Ombak pecah", "Ombak junam", "Ombak pembina", "Ombak pembinasa"], 2], ["Bagaimanakah kerajaan memelihara sumber marin di Malaysia?", ["Mewartakan taman laut", "Membina gabion dan groin", "Membina pelabuhan perikanan", "Menanam semula pokok bakau"], 0], ["Mengapakah julat suhu harian Bayan Lepas lebih rendah berbanding Temerloh?", ["Pengaruh kelautan", "Pengaruh angin monsun", "Kedudukan garisan lintang", "Ketinggian bentuk muka bumi"], 0], ["Antara berikut, langkah persediaan kerajaan India menghadapi kemarau ialah", ["Mewujudkan kawasan hijau", "Membeli air dari luar negara", "Mengitar semula air terpakai", "Membina telaga air bawah tanah"], 1], ["Pernyataan yang benar tentang iklim Khatulistiwa ialah", ["Min suhu tahunan kira-kira 27°C", "Terdapat satu musim kering", "Julat suhu harian 10°C hingga 12°C", "Hujan tahunan kurang daripada 1000 mm"], 1], ["Kombinasi kegiatan manusia dan kesan terhadap alam sekitar yang benar ialah", ["Pembakaran bahan api fosil – kesan rumah hijau", "Penggunaan aerosol – pulau haba", "Pembuangan sisa toksik – jerebu", "Penebangan hutan – hujan asid"], 0]]},
+ {name:"Gunung dan Tumbuh-tumbuhan",emoji:"🌋",tag:"Batuan, luluhawa dan ekosistem",decor:"volcano",floor:0x57534e,ball:0x8b5cf6,qs:[["Apakah kepentingan cacing dalam ekosistem?", ["Pengguna yang memakan pengguna primer", "Pengurai yang menghasilkan nutrien", "Membantu tumbuhan melalui fotosintesis", "Pengeluar yang menghasilkan makanan sendiri"], 1], ["Tumbuh-tumbuhan jenis xerofit, bertaburan jarang dan berakar panjang biasanya terdapat di", ["Hutan Boreal", "Gurun Panas", "Hutan Konifer", "Padang Rumput Savana"], 1], ["Apakah maksud pemuliharaan tumbuh-tumbuhan semula jadi?", ["Melindungi habitat fauna daripada diceroboh", "Melakukan penebangan terpilih", "Mengawasi aktiviti pembalakan", "Memastikan sumber hutan yang diganggu kembali seperti asal"], 3], ["Antara berikut, langkah pemeliharaan tumbuh-tumbuhan semula jadi di Malaysia ialah", ["Mewartakan hutan simpan", "Menanam pokok cepat matang", "Melaksanakan penghutanan semula", "Mengadakan pendidikan alam sekitar"], 0], ["Negara Y mempunyai keluasan 1200 km² dan penduduk 800 000 orang. Berapakah kepadatan penduduknya?", ["467 orang/km²", "577 orang/km²", "667 orang/km²", "878 orang/km²"], 2], ["Kawasan yang mempunyai penduduk jarang ialah", ["Banjaran Rocky dan Delta Sungai Nil", "Banjaran Rocky dan Lembangan Amazon", "Delta Sungai Nil dan Lembangan Hwang Ho", "Lembangan Hwang Ho dan Lembangan Amazon"], 1], ["Apakah kesan negara yang mempunyai penduduk ramai, sumber terhad dan tahap teknologi rendah?", ["Taraf kesihatan tinggi", "Kadar upah meningkat", "Kadar celik huruf tinggi", "Peluang pekerjaan terhad"], 3], ["Negara P mempunyai 400 000 penduduk dan 240 kematian pada tahun 2024. Kadar kematian kasar ialah", ["0.6 bagi setiap 1000 orang", "6 bagi setiap 1000 orang", "60 bagi setiap 1000 orang", "600 bagi setiap 1000 orang"], 3]]},
+ {name:"Stadium Penduduk",emoji:"⚽",tag:"Penduduk, migrasi dan petempatan",decor:"stadium",floor:0x16a34a,ball:0xdc2626,qs:[["Alissa berpindah dari Kota Bharu ke Shah Alam untuk melanjutkan pelajaran. Jenis migrasi itu ialah", ["Bandar ke bandar", "Bandar ke luar bandar", "Luar bandar ke bandar", "Luar bandar ke luar bandar"], 0], ["Pemodenan sektor pertanian dapat mengurangkan migrasi luar bandar ke bandar melalui", ["Penggunaan jentera moden", "Pengambilan tenaga kerja asing", "Kaedah pertanian pindah", "Penggunaan baja kimia"], 1], ["Petempatan L dan M dalam peta Malaysia berkembang pesat kerana", ["Ekopelancongan", "Perindustrian petrokimia", "Kawasan pertanian ladang", "Perdagangan antarabangsa"], 1], ["Apakah kepentingan petempatan luar bandar kepada petempatan bandar dalam sektor pelancongan?", ["Menyediakan kemudahan infrastruktur", "Membekalkan sumber makanan", "Membekalkan perkhidmatan sosial", "Menyediakan keindahan alam semula jadi"], 3], ["Langkah mengurangkan masalah perumahan dan kesesakan lalu lintas akibat urbanisasi ialah", ["Membina rumah pangsa", "Mewujudkan bandar satelit", "Membina jalan raya bertingkat", "Menguatkuasakan undang-undang"], 1], ["Kesan positif proses urbanisasi di negara maju ialah", ["Perkembangan infrastruktur", "Kesesakan lalu lintas", "Fenomena banjir kilat", "Taraf hidup meningkat"], 1], ["Yang manakah sumber tenaga boleh baharu?", ["Air", "Batu kapur", "Gas asli", "Arang batu"], 0], ["Mengapakah penggunaan tenaga nuklear lebih tertumpu di negara maju?", ["Kos yang murah", "Kepakaran tenaga kerja", "Mesra alam sekitar", "Sumber tenaga lain terhad"], 1]]},
+ {name:"Bandar dan Sumber",emoji:"🏙️",tag:"Tenaga dan pembangunan lestari",decor:"mall",floor:0x60a5fa,ball:0xf59e0b,qs:[["Apakah kesan negatif perlombongan arang batu terhadap alam sekitar?", ["Pencemaran bahan toksik", "Pencemaran laut", "Fenomena jerebu", "Fenomena pulau haba"], 0], ["Kombinasi masalah pengurusan sumber dan cara mengatasinya yang benar ialah", ["Pemusnahan habitat akuatik – pembinaan tukun tiruan", "Kemerosotan kualiti air sungai – rawatan kumbahan", "Kesuburan tanih berkurang – tanaman giat setempat", "Kepupusan flora – pembinaan empangan"], 1], ["Apakah kegiatan yang dikategorikan sebagai sektor tertier?", ["Perikanan air tawar", "Perindustrian automotif", "Ekopelancongan", "Perlombongan mineral"], 2], ["Mengapakah kegiatan ekonomi automotif berkembang pesat di Jepun?", ["Subsidi daripada kerajaan", "Bekalan tenaga buruh yang ramai", "Kerjasama dengan negara maju", "Teknologi kejuruteraan robotik"], 3], ["Faktor fizikal yang menggalakkan kegiatan pertanian di Malaysia ialah", ["Pinjaman modal", "Jaringan pengangkutan yang baik", "Sistem pengairan yang cekap", "Kawasan tanah beralun yang bersaliran baik"], 3], ["Mengapakah pertanian pindah boleh mengakibatkan tanih hilang kesuburan?", ["Hakisan tanih yang tinggi", "Aktiviti tebus guna tanah", "Tanih kekurangan nutrien", "Kawasan menjadi kontang"], 2], ["Kombinasi aktiviti manusia dan kesannya terhadap alam sekitar yang benar ialah", ["Pertanian pindah – permukaan cerun bukit gondol", "Penggunaan baja kimia – keasidan tanih meningkat", "Pembinaan pelabuhan – aras laut meningkat", "Perlombongan petroleum – kemusnahan taman laut"], 0], ["Usaha awal untuk mengurangkan kesan kegiatan ekonomi terhadap alam sekitar ialah", ["Program kitar semula", "Aplikasi teknologi hijau", "Penilaian Impak Alam Sekitar (EIA)", "Penyelidikan dan pembangunan (R&D)"], 2]]}
+];
+const $=id=>document.getElementById(id);
+let scene,camera,renderer,ball,pins=[],lane,decor=[],raf;
+let level=0,round=1,score=0,totalScore=0,geoScore=0,correct=0,asked=0,answered=false,canThrow=false,rolling=false,soundOn=true,ballX=0,dragX=0,dragY=0,dragging=false,activeQuestion=null,usedQuestions=[],animating=false;
+const pinPositions=[[-.54,-.34],[-.18,-.34],[.18,-.34],[.54,-.34],[-.72,-.68],[-.24,-.68],[.24,-.68],[.72,-.68],[-.36,-1.02],[.36,-1.02]];
+function sound(f=650,d=.12){if(!soundOn)return;try{const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(c.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,c.currentTime+d);o.stop(c.currentTime+d);setTimeout(()=>c.close(),d*1000+50)}catch(e){}}
+function init3D(){
+ scene=new THREE.Scene();scene.background=new THREE.Color(0x91d5f8);scene.fog=new THREE.Fog(0x91d5f8,24,65);
+ camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,150);camera.position.set(0,3.2,6.4);camera.lookAt(0,.4,-9);
+ renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,1.8));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;$('canvas-container').appendChild(renderer.domElement);
+ scene.add(new THREE.HemisphereLight(0xffffff,0x53617e,1.35));const light=new THREE.DirectionalLight(0xffffff,1.5);light.position.set(-4,12,6);light.castShadow=true;scene.add(light);
+ buildScene();addEventListener('resize',resize);loop();
+}
+function mat(c,rough=.5,extra={}){return new THREE.MeshStandardMaterial({color:c,roughness:rough,...extra})}
+function add(geo,m,x,y,z){const o=new THREE.Mesh(geo,m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;scene.add(o);return o}
+function buildScene(){
+ while(scene.children.length)scene.remove(scene.children[0]);scene.add(new THREE.HemisphereLight(0xffffff,0x53617e,1.3));const l=new THREE.DirectionalLight(0xffffff,1.4);l.position.set(-4,12,6);l.castShadow=true;scene.add(l);
+ const cfg=LEVELS[level];scene.background=new THREE.Color(level===2?0xf7a36a:level===1?0x70d6f5:level===3?0x87b9f5:level===4?0xfde68a:0x91d5f8);scene.fog=new THREE.Fog(scene.background,28,70);
+ add(new THREE.PlaneGeometry(100,100),mat(cfg.floor,.8),0,-.34,-18).rotation.x=-Math.PI/2;
+ lane=add(new THREE.BoxGeometry(3.5,.22,31),mat(cfg.floor,.3,{metalness:.12}),0,-.12,-13);lane.receiveShadow=true;
+ const edgeMat=mat(level===2?0x0ea5e9:level===3?0xf97316:0xf472b6,.3,{emissive:level===3?0xea580c:0x000000,emissiveIntensity:.4});
+ [-1,1].forEach(s=>add(new THREE.BoxGeometry(.55,.16,31),edgeMat,s*2.05,-.18,-13));
+ // Hiasan mengikut tema
+ if(level===1){for(let i=0;i<10;i++){const trunk=add(new THREE.CylinderGeometry(.07,.12,1.8,7),mat(0x854d0e),i%2?-4.1:4.1,.6,-i*3-1);const crown=add(new THREE.SphereGeometry(.65,9,7),mat(0x22c55e),trunk.position.x,1.75,trunk.position.z);}}
+ if(level===2){for(let i=0;i<8;i++){const x=i%2?-4.8:4.8,z=-i*3-2;add(new THREE.ConeGeometry(.8,1.4,9),mat([0xef4444,0xfacc15,0x3b82f6][i%3]),x,.55,z);}}
+ if(level===3){for(let i=0;i<5;i++){const m=add(new THREE.ConeGeometry(3+i*.3,5+i*.4,8),mat(i%2?0x44403c:0x57534e),i%2?-6:6,2,-19-i*5);m.rotation.z=(i%2?-.1:.1);}}
+ if(level===4){for(let s of [-1,1]){for(let i=0;i<6;i++){add(new THREE.BoxGeometry(.7,.45,2.5),mat([0x2563eb,0xdc2626,0xfacc15][i%3]),s*(3.2+i*.38),.2,-i*4-3);}}}
+ if(level===0){for(let i=0;i<12;i++){const b=add(new THREE.SphereGeometry(.24,12,8),mat([0xf87171,0xfbbf24,0x34d399,0x60a5fa][i%4]),(i%2?1:-1)*4,.8+(i%3)*.6,-i*2);b.scale.y=1.3;}}
+ // Pins
+ pins=[];pinPositions.forEach((p,i)=>{const g=new THREE.Group();const white=mat(0xffffff,.25);const body=new THREE.Mesh(new THREE.CylinderGeometry(.12,.19,.65,16),white);body.position.y=.36;g.add(body);const neck=new THREE.Mesh(new THREE.CylinderGeometry(.075,.12,.18,14),white);neck.position.y=.76;g.add(neck);const red=mat(0xef4444,.35);const stripe=new THREE.Mesh(new THREE.TorusGeometry(.105,.025,6,18),red);stripe.position.y=.72;stripe.rotation.x=Math.PI/2;g.add(stripe);g.position.set(p[0],0,-26+p[1]*2);g.userData={baseX:g.position.x,baseZ:g.position.z,down:false};g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});scene.add(g);pins.push(g)});
+ ball=add(new THREE.SphereGeometry(.31,32,24),mat(cfg.ball,.18,{metalness:.45}));ball.position.set(0,.31,1.5);ballX=0;
+}
+function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}
+function loop(){raf=requestAnimationFrame(loop);const t=performance.now()*.001;decor.forEach(fn=>fn(t));renderer.render(scene,camera)}
+function mascot(text){$('mascot').classList.remove('hidden');$('mascot-text').textContent=text}
+function showQuiz(){
+ answered=false;canThrow=false;rolling=false;activeQuestion=pickQuestion();$('quiz-round').textContent=round;$('quiz-question').textContent=activeQuestion.q;$('feedback').textContent='';$('quiz-choices').innerHTML='';
+ activeQuestion.options.forEach((txt,i)=>{const b=document.createElement('button');b.className='choice';b.textContent=String.fromCharCode(65+i)+'. '+txt;b.onclick=()=>answer(i,b);$('quiz-choices').appendChild(b)});
+ $('quiz-modal').classList.remove('hidden');$('aim-panel').classList.add('hidden');$('mascot').classList.remove('hidden');mascot('Jom jawab soalan Geografi!');
+}
+function pickQuestion(){let bank=LEVELS[level].qs;if(usedQuestions.length>=bank.length)usedQuestions=[];let idx;do{idx=Math.floor(Math.random()*bank.length)}while(usedQuestions.includes(idx));usedQuestions.push(idx);let q=bank[idx];return {q:q[0],options:q[1],correct:q[2]}}
+function answer(i,b){
+ if(answered)return;answered=true;asked++;const good=i===activeQuestion.correct;
+ document.querySelectorAll('.choice').forEach((x,j)=>{if(j===activeQuestion.correct)x.classList.add('correct');else if(j===i)x.classList.add('wrong');x.disabled=true});
+ if(good){correct++;geoScore++;$('geo-score').textContent=geoScore;$('feedback').style.color='#6ee7b7';$('feedback').textContent='✅ Tepat sekali! Balingan kuasa penuh dibuka!';sound(780);mascot('Hebat! Jawapan tepat!');if(window.confetti)confetti({particleCount:35,spread:55,origin:{y:.55}})}
+ else{$('feedback').style.color='#fda4af';$('feedback').textContent='❌ Jawapan: '+activeQuestion.options[activeQuestion.correct]+'. Teruskan mencuba!';sound(220);mascot('Tak apa, cuba lagi!')}
+ setTimeout(()=>{$('quiz-modal').classList.add('hidden');enableAim(good)},1050);
+}
+function enableAim(good){canThrow=true;ball.position.set(ballX,.31,1.5);ball.rotation.set(0,0,0);camera.position.set(0,3.2,6.4);camera.lookAt(0,.4,-9);$('aim-panel').classList.remove('hidden');$('aim-message').textContent=good?'⚡ KUASA PENUH! Seret kiri/kanan untuk sasar, slide ke atas untuk baling.':'🎯 Sasar dengan cermat, kemudian slide ke atas!';$('throw-zone').style.borderColor=good?'#34d399':'#67e8f9';mascot('Sasar dan baling!')}
+const zone=$('throw-zone');
+function startDrag(e){if(!canThrow||rolling)return;e.preventDefault();dragging=true;dragX=e.clientX;dragY=e.clientY;zone.classList.add('pulling');if(zone.setPointerCapture)try{zone.setPointerCapture(e.pointerId)}catch(_){}}
+function moveDrag(e){if(!dragging)return;const dx=e.clientX-dragX;ballX=Math.max(-1.25,Math.min(1.25,ballX+dx*.009));ball.position.x=ballX;dragX=e.clientX}
+function endDrag(e){if(!dragging)return;dragging=false;zone.classList.remove('pulling');const delta=dragY-e.clientY;if(delta>18)throwBall(delta)}
+zone.addEventListener('pointerdown',startDrag);zone.addEventListener('pointermove',moveDrag);zone.addEventListener('pointerup',endDrag);zone.addEventListener('pointercancel',endDrag);
+function throwBall(power){
+ if(!canThrow||rolling)return;canThrow=false;rolling=true;$('aim-panel').classList.add('hidden');$('mascot').classList.add('hidden');sound(180,.4);
+ const good=!!lastAnswerCorrect;const speed=Math.min(1.4,Math.max(.7,power/180));let elapsed=0;const startZ=ball.position.z;const startX=ballX;
+ // Tentukan bilangan pin berdasarkan ketepatan, kuasa swipe dan sasaran.
+ const aimQuality=Math.max(0,1-Math.abs(startX)*.45);let knocked=Math.max(0,Math.min(10,Math.round((good?5:2)+speed*2+aimQuality*2+(Math.random()*2-0.6))));
+ if(!good)knocked=Math.min(knocked,7);
+ const order=pins.map((p,i)=>({p,i,d:Math.abs(p.position.x-startX)})).sort((a,b)=>a.d-b.d);
+ const selected=new Set(order.slice(0,knocked).map(x=>x.i));
+ const start=performance.now();
+ function step(now){const u=Math.min(1,(now-start)/950);ball.position.z=startZ-27*u;ball.position.x=startX*(1-u*.35);ball.rotation.x-=.22;camera.position.set(ball.position.x*.25,2.7,ball.position.z+5);camera.lookAt(0,.3,-24);
+ if(u>=.68){pins.forEach((p,i)=>{if(selected.has(i)){const prog=Math.min(1,(u-.68)/.32);p.rotation.x=.9*prog*(i%2?1:-1);p.rotation.z=.65*prog*(i%3?1:-1);p.position.x=p.userData.baseX+(i%2?1:-1)*prog*.28;p.position.y=.1*prog;p.userData.down=true}})}
+ renderer.render(scene,camera);
+ if(u<1){requestAnimationFrame(step)}else{setTimeout(()=>showResult(knocked),250)}
+ }requestAnimationFrame(step);
+}
+let lastAnswerCorrect=true;
+const originalAnswer=answer;
+answer=function(i,b){const good=i===activeQuestion.correct;lastAnswerCorrect=good;originalAnswer(i,b)};
+function showResult(knocked){
+ score+=knocked;totalScore+=knocked;$('score-num').textContent=score;const title=knocked===10?'STRIKE!':knocked>=7?'HEBAT!':knocked>0?'BAGUS!':'CUBA LAGI!';
+ $('result-title').textContent=title;$('result-sub').textContent=knocked===10?'Sempurna! Semua 10 pin jatuh!':`${knocked} pin jatuh, ${10-knocked} pin masih berdiri.`;$('result-points').textContent='+'+knocked+' MARKAH';$('result-banner').classList.remove('hidden');sound(knocked>=7?850:360,.25);if(knocked>=7&&window.confetti)confetti({particleCount:75,spread:75,origin:{y:.4}});
+ setTimeout(()=>{$('result-banner').classList.add('hidden');advanceRound()},2100);
+}
+function resetPins(){pins.forEach(p=>{p.position.set(p.userData.baseX,0,p.userData.baseZ);p.rotation.set(0,0,0);p.userData.down=false});ballX=0;ball.position.set(0,.31,1.5);camera.position.set(0,3.2,6.4);camera.lookAt(0,.4,-9)}
+function advanceRound(){round++;if(round>8){showSummary()}else{$('round-num').textContent=round;resetPins();showQuiz()}}
+function showSummary(){
+ const accuracy=asked?Math.round(correct/asked*100):0;$('summary-score').textContent=score+'/80';$('summary-accuracy').textContent=accuracy+'%';$('summary-stars').textContent='⭐'.repeat(accuracy>=80?3:accuracy>=50?2:1)+'☆'.repeat(accuracy>=80?0:accuracy>=50?1:2);
+ if(level<4){$('summary-icon').textContent='🏆';$('summary-title').textContent='LEVEL '+(level+1)+' SELESAI!';$('summary-desc').textContent='Syabas! Anda berjaya menamatkan '+LEVELS[level].name+'. Sedia untuk cabaran seterusnya: '+LEVELS[level+1].emoji+' '+LEVELS[level+1].name+'?';$('next-btn').textContent='LEVEL SETERUSNYA ➡';$('next-btn').onclick=()=>loadLevel(level+1)}
+ else{$('summary-icon').textContent='👑';$('summary-title').textContent='JUARA GEO BOWLING!';$('summary-desc').textContent='Anda menamatkan semua 5 level! Jumlah markah: '+totalScore+'/500. Hebat, pakar Geografi!';$('next-btn').textContent='MAIN SEMULA 🔄';$('next-btn').onclick=()=>{totalScore=0;loadLevel(0)}}
+ $('summary-modal').classList.remove('hidden');if(window.confetti)confetti({particleCount:100,spread:95,origin:{y:.55}});
+}
+function loadLevel(n){
+ level=n;round=1;score=0;correct=0;asked=0;usedQuestions=[];if(n===0){totalScore=0;geoScore=0;$('geo-score').textContent='0';}$('score-num').textContent='0';$('round-num').textContent='1';$('level-badge').textContent=n+1;$('level-num').textContent=n+1;$('theme-name').textContent=LEVELS[n].name;
+ $('summary-modal').classList.add('hidden');$('level-intro').classList.remove('hidden');$('intro-emoji').textContent=LEVELS[n].emoji;$('intro-num').textContent=n+1;$('intro-name').textContent=LEVELS[n].name.toUpperCase();$('intro-tag').textContent=LEVELS[n].tag;
+ buildScene();resetPins();setTimeout(()=>{$('level-intro').classList.add('hidden');showQuiz()},1500);
+}
+$('start-btn').onclick=()=>{$('start-modal').classList.add('hidden');$('hud').classList.remove('hidden');initAudioUnlock();loadLevel(0)};
+function initAudioUnlock(){sound(520,.08)}
+$('sound-btn').onclick=()=>{soundOn=!soundOn;$('sound-btn').textContent=soundOn?'🔊':'🔇';if(soundOn)sound(600,.08)};
+init3D();
+</script>
+</body>
+</html>
